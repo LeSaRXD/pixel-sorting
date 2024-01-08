@@ -1,9 +1,12 @@
-use std::{io::{self, Write}, cmp::Ordering};
+use std::{io::{self, Write}, cmp::{Ordering, min}, ops::Range};
 
 use image::{io::Reader, GenericImageView, Rgb, ImageBuffer};
+use rand::Rng;
+
+const SLICE_RANGE: Range<usize> = 20..80;
 
 fn main() {
-    
+
 	// reading filename
 	let mut filename = String::new();
 	print!("Enter filename: ");
@@ -35,10 +38,15 @@ fn main() {
 
 	// sorting pixels horizontally
 	for y in 0..h {
-		let sl = (y * w)..((y + 1) * w);
-		let mut row = pixels[sl.clone()].to_vec();
-		row.sort_by(|a, b| comp_rgb(a, b));
-		output_pixels[sl].copy_from_slice(row.as_slice())
+		let mut i: usize = 0;
+		while i < w {
+			let slice_len = min(rand::thread_rng().gen_range(SLICE_RANGE), w - i);
+			let sl = (y * w + i)..(y * w + i + slice_len);
+			let mut row = pixels[sl.clone()].to_vec();
+			row.sort_by(|a, b| comp_rgb(a, b));
+			output_pixels[sl].copy_from_slice(row.as_slice());
+			i += slice_len;
+		}
 	}
 	// flattening the pixels into a Vec<u8>
 	let raw_output_pixels: Vec<u8> = output_pixels.into_iter().flatten().collect();
