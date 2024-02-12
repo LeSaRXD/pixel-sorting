@@ -3,7 +3,7 @@ use std::{io::{self, Write}, cmp::{Ordering, min}, ops::Range};
 use image::{io::Reader, GenericImageView, Rgb, ImageBuffer};
 use rand::Rng;
 
-const SLICE_RANGE: Range<usize> = 20..80;
+const SLICE_RANGE: Range<usize> = 20..160;
 
 fn main() {
 
@@ -25,7 +25,7 @@ fn main() {
 	let (w, h) = (width as usize, height as usize);
 
 	// reading pixels
-	let pixels: Vec<[u8; 3]> = input_img
+	let mut pixels: Vec<[u8; 3]> = input_img
 		.as_rgb8()
 		.unwrap()
 		.to_vec()
@@ -33,23 +33,21 @@ fn main() {
 		.map(|chunk| [chunk[0], chunk[1], chunk[2]])
 		.collect();
 
-	// allocating memory for output image
-	let mut output_pixels: Vec<[u8; 3]> = vec![[0u8; 3]; w * h];
-
 	// sorting pixels horizontally
 	for y in 0..h {
 		let mut i: usize = 0;
 		while i < w {
 			let slice_len = min(rand::thread_rng().gen_range(SLICE_RANGE), w - i);
-			let sl = (y * w + i)..(y * w + i + slice_len);
-			let mut row = pixels[sl.clone()].to_vec();
-			row.sort_by(|a, b| comp_rgb(a, b));
-			output_pixels[sl].copy_from_slice(row.as_slice());
+			{
+				let range = (y * w + i)..(y * w + i + slice_len);
+				let slice = &mut pixels[range];
+				slice.sort_by(|p1, p2| comp_rgb(&p1, &p2))
+			}
 			i += slice_len;
 		}
 	}
 	// flattening the pixels into a Vec<u8>
-	let raw_output_pixels: Vec<u8> = output_pixels.into_iter().flatten().collect();
+	let raw_output_pixels: Vec<u8> = pixels.into_iter().flatten().collect();
 	
 	// creating the new image
 	let new_img: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::from_raw(width, height, raw_output_pixels).unwrap();
